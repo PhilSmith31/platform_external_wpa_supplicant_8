@@ -3254,6 +3254,16 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 	wpa_dbg(wpa_s, MSG_DEBUG, "RX EAPOL from " MACSTR, MAC2STR(src_addr));
 	wpa_hexdump(MSG_MSGDUMP, "RX EAPOL", buf, len);
 
+#ifdef CONFIG_PEERKEY
+	if (wpa_s->wpa_state > WPA_ASSOCIATED && wpa_s->current_ssid &&
+	    wpa_s->current_ssid->peerkey &&
+	    !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE) &&
+	    wpa_sm_rx_eapol_peerkey(wpa_s->wpa, src_addr, buf, len) == 1) {
+		wpa_dbg(wpa_s, MSG_DEBUG, "RSN: Processed PeerKey EAPOL-Key");
+		return;
+	}
+#endif /* CONFIG_PEERKEY */
+
 	if (wpa_s->wpa_state < WPA_ASSOCIATED ||
 	    (wpa_s->last_eapol_matches_bssid &&
 #ifdef CONFIG_AP
@@ -5687,11 +5697,7 @@ int wpa_supplicant_ctrl_iface_ctrl_rsp_handle(struct wpa_supplicant *wpa_s,
 		eap->identity = (u8 *) os_strdup(value);
 		eap->identity_len = os_strlen(value);
 		eap->pending_req_identity = 0;
-		if (ssid == wpa_s->current_ssid
-#ifndef CONFIG_EAP_PROXY
-			&& wpa_s->wpa_state < WPA_ASSOCIATING
-#endif
-		)
+		if (ssid == wpa_s->current_ssid)
 			wpa_s->reassociate = 1;
 		break;
 	case WPA_CTRL_REQ_EAP_PASSWORD:

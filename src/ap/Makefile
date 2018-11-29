@@ -45,6 +45,7 @@ LIB_OBJS= \
 	ieee802_1x.o \
 	ndisc_snoop.o \
 	p2p_hostapd.o \
+	peerkey_auth.o \
 	pmksa_cache_auth.o \
 	preauth_auth.o \
 	sta_info.o \

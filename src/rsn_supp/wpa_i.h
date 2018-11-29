@@ -11,6 +11,7 @@
 
 #include "utils/list.h"
 
+struct wpa_peerkey;
 struct wpa_tdls_peer;
 struct wpa_eapol_key;
 
@@ -56,6 +57,7 @@ struct wpa_sm {
 	int fast_reauth; /* whether EAP fast re-authentication is enabled */
 
 	void *network_ctx;
+	int peerkey_enabled;
 	int allowed_pairwise_cipher; /* bitfield of WPA_CIPHER_* */
 	int proactive_key_caching;
 	int eap_workaround;
@@ -92,6 +94,9 @@ struct wpa_sm {
 	u8 *ap_wpa_ie, *ap_rsn_ie;
 	size_t ap_wpa_ie_len, ap_rsn_ie_len;
 
+#ifdef CONFIG_PEERKEY
+	struct wpa_peerkey *peerkey;
+#endif /* CONFIG_PEERKEY */
 #ifdef CONFIG_TDLS
 	struct wpa_tdls_peer *tdls;
 	int tdls_prohibited;

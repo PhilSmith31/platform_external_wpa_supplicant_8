@@ -247,10 +247,15 @@ ifdef CONFIG_TDLS_TESTING
 L_CFLAGS += -DCONFIG_TDLS_TESTING
 endif
 
+ifdef CONFIG_PEERKEY
+L_CFLAGS += -DCONFIG_PEERKEY
+endif
+
 ifndef CONFIG_NO_WPA
 OBJS += src/rsn_supp/wpa.c
 OBJS += src/rsn_supp/preauth.c
 OBJS += src/rsn_supp/pmksa_cache.c
+OBJS += src/rsn_supp/peerkey.c
 OBJS += src/rsn_supp/wpa_ie.c
 OBJS += src/common/wpa_common.c
 NEED_AES=y
@@ -545,11 +550,7 @@ endif
 
 ifdef CONFIG_EAP_PROXY
 L_CFLAGS += -DCONFIG_EAP_PROXY
-ifneq ($(CONFIG_EAP_PROXY),qmi)
-# QMI needs proprietary headers to build :(
-# Spin it into a blobbable lib
 OBJS += src/eap_peer/eap_proxy_$(CONFIG_EAP_PROXY).c
-endif
 include $(LOCAL_PATH)/eap_proxy_$(CONFIG_EAP_PROXY).mk
 CONFIG_IEEE8021X_EAPOL=y
 endif
@@ -858,6 +859,9 @@ OBJS += src/ap/wpa_auth_ie.c
 OBJS += src/ap/pmksa_cache_auth.c
 ifdef CONFIG_IEEE80211R
 OBJS += src/ap/wpa_auth_ft.c
+endif
+ifdef CONFIG_PEERKEY
+OBJS += src/ap/peerkey_auth.c
 endif
 endif
 
@@ -1552,32 +1556,6 @@ LOCAL_SRC_FILES := $(OBJS_c)
 LOCAL_C_INCLUDES := $(INCLUDES)
 include $(BUILD_EXECUTABLE)
 
-# This needs QMI artifacts to be built
-ifneq ($(QCPATH),)
-
-ifeq ($(CONFIG_EAP_PROXY),qmi)
-include $(CLEAR_VARS)
-
-LOCAL_MODULE = libwpa_qmi_eap_proxy
-LOCAL_SHARED_LIBRARIES := libcutils liblog libwpa_client
-LOCAL_SRC_FILES += src/eap_peer/eap_proxy_$(CONFIG_EAP_PROXY).c
-LOCAL_SRC_FILES += src/utils/wpa_debug.c
-LOCAL_SRC_FILES += src/utils/wpabuf.c
-LOCAL_SRC_FILES += src/utils/eloop.c
-LOCAL_SRC_FILES += src/utils/common.c
-include $(LOCAL_PATH)/eap_proxy_$(CONFIG_EAP_PROXY).mk
-LOCAL_C_INCLUDES := $(INCLUDES)
-LOCAL_CFLAGS = $(L_CFLAGS)
-
-LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
-LOCAL_SHARED_LIBRARIES += $(LIB_SHARED_EAP_PROXY)
-
-include $(BUILD_SHARED_LIBRARY)
-
-endif # qmi EAP_PROXY
-endif # QCPATH
-
-
 ########################
 include $(CLEAR_VARS)
 LOCAL_MODULE := wpa_supplicant
@@ -1589,12 +1567,8 @@ LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB)
 endif
 LOCAL_SHARED_LIBRARIES := libc libcutils liblog
 ifdef CONFIG_EAP_PROXY
-ifneq ($(CONFIG_EAP_PROXY),qmi)
 LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
 LOCAL_SHARED_LIBRARIES += $(LIB_SHARED_EAP_PROXY)
-else
-LOCAL_SHARED_LIBRARIES += libwpa_qmi_eap_proxy
-endif
 endif
 ifeq ($(CONFIG_TLS), openssl)
 LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
